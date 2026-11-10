@@ -1,8 +1,9 @@
 // Prisma schema for the Budiman HRMS starter app.
-// Only the User table exists so far. You add the leave request table in
-// Session 2, from the data design you write in docs/specs/.
-// Roles are stored as a String because the SQLite connector does not support
-// Prisma `enum`. The valid values are in src/lib/constants.ts.
+// User is the login table (design Part A §1); LeaveRequest comes from the
+// Leave Request data design (design Part A §9).
+// Roles, leave types and statuses are stored as Strings because the SQLite
+// connector does not support Prisma `enum`. The valid values are in
+// src/lib/constants.ts.
 
 datasource db {
   provider = "sqlite"
@@ -23,4 +24,21 @@ model User {
   designation      String
   division         String
   createdAt        DateTime @default(now())
+}
+
+// One row is one employee's leave request, from submission until it ends as
+// APPROVED, REJECTED or WITHDRAWN. Rows are never deleted (design §9).
+// The Days column shown on screen is computed from the two dates
+// (src/lib/leave.ts) and never stored. Dates are stored at midnight UTC.
+model LeaveRequest {
+  id           Int      @id @default(autoincrement())
+  employeeId   Int // who submitted it — a link to User.id
+  supervisorId Int // supervisor chosen at submission, from the employee's division; fixed (rule 9)
+  leaveType    String // ANNUAL | SICK | EMERGENCY | UNPAID
+  startDate    DateTime // first day of leave, midnight UTC
+  endDate      DateTime // last day of leave; never before startDate (rule 7)
+  reason       String? // the employee's own words; may be empty
+  status       String // AWAITING_SUPERVISOR | SIGNED | AWAITING_HR | APPROVED | REJECTED | WITHDRAWN
+  remarks      String? // the rejection reason; only written when rejected (rule 11)
+  hrOfficerId  Int? // the HR officer who decided; only filled when HR decided (rule 12)
 }

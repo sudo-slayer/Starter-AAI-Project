@@ -16,7 +16,9 @@ const USERS = [
 ];
 
 async function main() {
-  // Reset the data so the seed is repeatable.
+  // Reset the data so the seed is repeatable. The seed is the only thing
+  // that clears leave requests (design Part A rule 13).
+  await prisma.leaveRequest.deleteMany();
   await prisma.user.deleteMany();
 
   const passwordHash = await bcrypt.hash("password123", 10);
